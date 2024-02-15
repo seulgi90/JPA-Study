@@ -1,6 +1,7 @@
 package jpabook.jpashop.Controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import jpabook.jpashop.Service.MemberService;
 import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Member;
@@ -40,5 +41,13 @@ public class MemberController {
         memberService.join(member);
 
         return "redirect:/";
+    }
+    
+    @GetMapping("/members")
+    public String list(Model model) {
+//        List<Member> members = memberService.findMembers();
+//        model.addAttribute("members", members);
+        model.addAttribute("members", memberService.findMembers());
+        return "members/memberList";
     }
 }

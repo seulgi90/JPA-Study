@@ -1,15 +1,27 @@
 package jpabook.jpashop.repository;
 
+import static jpabook.jpashop.domain.QMember.member;
+import static jpabook.jpashop.domain.QOrder.order;
+
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.ArrayList;
+import java.util.List;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
+import jpabook.jpashop.domain.QMember;
+import jpabook.jpashop.domain.QOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -26,7 +38,7 @@ public class OrderRepository {
     }
 
     /**
-     * JPQL 문자로 동적쿼리를 생성하는 일은 버그, 오류 확률이 높아지는 예제
+     * JPQL로 동적쿼리를 생성하는 일은 버그, 오류 확률이 높아지는 예제
      */
     public List<Order> findAllByString(OrderSearch orderSearch) {
 
@@ -36,23 +48,23 @@ public class OrderRepository {
         // 주문 상태 검색
         if (orderSearch.getOrderStatus() != null) {
             if (isFirstCondition) {
-                jpql += "where";
+                jpql += " where";
                 isFirstCondition = false;
             } else {
-                jpql += "and";
+                jpql += " and";
             }
-            jpql += "o.status = : status";
+            jpql += " o.status = :status";
         }
 
         // 회원 이름 검색
         if (StringUtils.hasText(orderSearch.getMemberName())) {
             if (isFirstCondition) {
-                jpql += "where";
+                jpql += " where";
                 isFirstCondition = false;
             } else {
-                jpql += "and";
+                jpql += " and";
             }
-            jpql += "m.name like :name";
+            jpql += " m.name like :name";
         }
 //        return em.createQuery(jpql, Order.class)
 //                .setMaxResults(1000)
@@ -114,19 +126,34 @@ public class OrderRepository {
     /**
      * Querydsl
      */
-//    public List<Order> findAll(OrderSearch orderSearch) {
-//        QOrder order = QOrder.order;
-//        QMember member = QMember.member;
-//
-//        return query
-//                .select(order)
-//                .from(order)
-//                .join(order.member, member)
-//                .where(statusEq(orderSearch.getOrderStatus()),
-//                        nameLike(orderSearch.getMemberName()))
-//                .limit(1000)
-//                .fetch();
-//    }
-
+    public List<Order> findAll(OrderSearch orderSearch) {
+        QOrder order = QOrder.order;
+        QMember member = QMember.member;
+    
+        JPAQueryFactory query = new JPAQueryFactory(em);
+        
+        return query
+                .select(order)
+                .from(order)
+                .join(order.member, member)
+                .where(statusEq(orderSearch.getOrderStatus()),
+                        nameLike(orderSearch.getMemberName()))
+                .limit(1000)
+                .fetch();
+    }
+    
+    private BooleanExpression statusEq(OrderStatus statusCond){
+        if(statusCond == null){
+            return null;
+        }
+        return order.status.eq(statusCond);
+    }
+    
+    private BooleanExpression nameLike(String nameCond){
+        if(!StringUtils.hasText(nameCond)){
+            return null;
+        }
+        return member.name.like(nameCond);
+    }
 
 }

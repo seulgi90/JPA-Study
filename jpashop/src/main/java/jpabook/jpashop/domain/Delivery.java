@@ -15,7 +15,6 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Builder
 public class Delivery {
 
     @Id @GeneratedValue
